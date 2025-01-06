@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "442720118223",
+    "project_id": "stuff-manager-95932",
+    "storage_bucket": "stuff-manager-95932.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:442720118223:android:294c88e24ffbecf2ad9eba",
+        "android_client_info": {
+          "package_name": "com.example.stuff"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA31drCiGsDdWygirK9t-s7IOLnrKG6-ZY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
