@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:multi_select_flutter/multi_select_flutter.dart';
 
 class AddItemsPage extends StatefulWidget {
   @override
@@ -29,83 +28,46 @@ class _AddItemsPageState extends State<AddItemsPage> {
       final snapshot =
           await FirebaseFirestore.instance.collection('materialTypes').get();
       setState(() {
-        _materialTypes = snapshot.docs
-            .map((doc) => doc['username']?.toString() ?? '')
-            .toList();
-        _isLoadingMaterials = false; // Stop loading spinner for materials
+        _materialTypes =
+            snapshot.docs.map((doc) => doc['name']?.toString() ?? '').toList();
+        _isLoadingMaterials = false;
       });
     } catch (e) {
       print('Error fetching material types: $e');
       setState(() {
-        _isLoadingMaterials = false; // Stop loading spinner
+        _isLoadingMaterials = false;
       });
     }
   }
 
-  // Fetch users from Firestore
+  // Fetch users from Firestore without duplicates
   Future<void> _fetchUsers() async {
     try {
       setState(() {
-        _isLoadingUsers = true; // Show loading indicator for users
+        _isLoadingUsers = true;
       });
       final snapshot =
           await FirebaseFirestore.instance.collection('users').get();
+
+      // Use a Set to remove duplicates
+      final uniqueUsers = <String>{};
+      snapshot.docs.forEach((doc) {
+        String username = doc['username']?.toString() ?? 'Unknown';
+        uniqueUsers.add(username);
+      });
+
       setState(() {
-        _userList = snapshot.docs
-            .map((doc) =>
-                doc['username']?.toString() ??
-                'Unknown') // Safely cast to String
-            .toList();
-        _isLoadingUsers = false; // Stop loading indicator for users
+        _userList = uniqueUsers.toList();
+        _isLoadingUsers = false;
       });
     } catch (e) {
       setState(() {
-        _isLoadingUsers = false; // Stop loading indicator for users
+        _isLoadingUsers = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error fetching users: $e')),
       );
     }
-  }
-
-  // Add new material type to Firestore
-  Future<void> _addMaterialType() async {
-    final TextEditingController _newMaterialController =
-        TextEditingController();
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Add New Material Type'),
-          content: TextField(
-            controller: _newMaterialController,
-            decoration: InputDecoration(labelText: 'Material Type'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                String newMaterial = _newMaterialController.text.trim();
-                if (newMaterial.isNotEmpty) {
-                  await FirebaseFirestore.instance
-                      .collection('materialTypes')
-                      .add({'name': newMaterial});
-                  _fetchMaterialTypes(); // Refresh the list
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('$newMaterial added to materials')),
-                  );
-                }
-                Navigator.of(context).pop();
-              },
-              child: Text('Add'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   // Add item to Firestore
@@ -166,76 +128,138 @@ class _AddItemsPageState extends State<AddItemsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Add Items')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      appBar: AppBar(
+        title: Text(
+          'Add Items',
+          style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
+        elevation: 8,
+      ),
+      body: Container(
+        // color: Colors.green, // Set the background color to green
+
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage(
+                'assets/background.png'), // Replace with your image path
+            fit: BoxFit.cover,
+          ),
+        ),
+
+        width: double.infinity, // Make sure container stretches full width
+        height: double.infinity, // Make sure container stretches full height
+        padding: const EdgeInsets.all(20.0),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Select Material Type',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueAccent,
+                ),
               ),
-              Row(
-                children: [
-                  Expanded(
-                    child: _isLoadingMaterials
-                        ? CircularProgressIndicator()
-                        : DropdownButton<String>(
-                            value: _selectedMaterialType,
-                            hint: Text('Choose Material Type'),
-                            items: _materialTypes.map((type) {
-                              return DropdownMenuItem(
-                                value: type,
-                                child: Text(type),
-                              );
-                            }).toList(),
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedMaterialType = value;
-                              });
-                            },
-                          ),
-                  ),
-                  SizedBox(width: 8),
-                  IconButton(
-                    icon: Icon(Icons.add),
-                    onPressed: _addMaterialType,
-                    tooltip: 'Add New Material Type',
-                  ),
-                ],
-              ),
+              _isLoadingMaterials
+                  ? Center(child: CircularProgressIndicator())
+                  : Container(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0),
+                        border: Border.all(
+                            color: const Color.fromARGB(255, 255, 255, 255)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: DropdownButton<String>(
+                        value: _selectedMaterialType,
+                        hint: Text('Choose Material Type',
+                            style: TextStyle(
+                                fontSize: 16,
+                                color: Color.fromARGB(255, 255, 255, 255))),
+                        items: _materialTypes.map((type) {
+                          return DropdownMenuItem(
+                            value: type,
+                            child: Text(type, style: TextStyle(fontSize: 16)),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedMaterialType = value;
+                          });
+                        },
+                        isExpanded: true,
+                      ),
+                    ),
               SizedBox(height: 16),
               Text(
                 'Select Users',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueAccent,
+                ),
               ),
               _isLoadingUsers
-                  ? CircularProgressIndicator()
-                  : MultiSelectDialogField(
-                      items: _userList
-                          .map((user) => MultiSelectItem(user, user))
-                          .toList(),
-                      initialValue: _selectedUsers,
-                      title: Text('Users'),
-                      buttonText: Text('Choose Users'),
-                      onConfirm: (values) {
-                        setState(() {
-                          _selectedUsers = values.cast<String>();
-                        });
-                      },
-                    ),
+                  ? Center(child: CircularProgressIndicator())
+                  : _userList.isEmpty
+                      ? Center(
+                          child: Text('No users available',
+                              style: TextStyle(fontSize: 16)))
+                      : Wrap(
+                          spacing: 8.0,
+                          runSpacing: 8.0,
+                          children: _userList.map((user) {
+                            bool isSelected = _selectedUsers.contains(user);
+                            return ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isSelected
+                                    ? Colors.blueAccent
+                                    : Colors.grey,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8)),
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  if (isSelected) {
+                                    _selectedUsers.remove(user);
+                                  } else {
+                                    _selectedUsers.add(user);
+                                  }
+                                });
+                              },
+                              child: Text(user,
+                                  style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.black)),
+                            );
+                          }).toList(),
+                        ),
               SizedBox(height: 16),
               TextField(
                 controller: _costController,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: 'Cost'),
+                decoration: InputDecoration(
+                  labelText: 'Cost',
+                  border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
               ),
               SizedBox(height: 16),
               ElevatedButton(
                 onPressed: _addItem,
-                child: Text('Submit'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueAccent,
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                child: Text('Submit',
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ),
             ],
           ),

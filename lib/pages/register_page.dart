@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
-  // ignore: library_private_types_in_public_api
   _RegisterPageState createState() => _RegisterPageState();
 }
 
@@ -12,14 +11,23 @@ class _RegisterPageState extends State<RegisterPage> {
   final _passwordController = TextEditingController();
 
   Future<void> registerUser() async {
-    String username = _usernameController.text;
-    String password = _passwordController.text;
+    String username = _usernameController.text.trim();
+    String password = _passwordController.text.trim();
+
+    // Check if username or password is empty
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Username and Password are required!')),
+      );
+      return; // Exit if validation fails
+    }
 
     try {
       await FirebaseFirestore.instance.collection('users').add({
         'username': username,
         'password': password,
         'role': 'user',
+        'cost': '0',
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('User registered successfully!')),
