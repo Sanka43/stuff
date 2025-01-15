@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -16,6 +15,7 @@ class UserDetailsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('User Details'),
+        backgroundColor: Colors.deepPurpleAccent,
       ),
       body: FutureBuilder<DocumentSnapshot>(
         future: usersCollection.doc(userId).get(),
@@ -25,10 +25,11 @@ class UserDetailsPage extends StatelessWidget {
           }
 
           if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
-            return Center(
+            return const Center(
               child: Text(
                 'User not found.',
-                style: TextStyle(fontSize: 18),
+                style: TextStyle(
+                    fontSize: 18, color: Color.fromARGB(255, 0, 0, 0)),
               ),
             );
           }
@@ -45,18 +46,24 @@ class UserDetailsPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Username: $username',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      '$username',
+                      style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.deepPurpleAccent),
                     ),
                     SizedBox(height: 10),
                     Text(
-                      'Total Cost: \$${totalCost.toStringAsFixed(2)}',
-                      style: TextStyle(fontSize: 16),
+                      'Total Cost: Rs.${totalCost.toStringAsFixed(2)}',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                     SizedBox(height: 20),
                     Text(
                       'Things Usage:',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.deepPurpleAccent),
                     ),
                   ],
                 ),
@@ -72,11 +79,12 @@ class UserDetailsPage extends StatelessWidget {
                       return Center(child: CircularProgressIndicator());
                     }
 
-                    if (!itemSnapshot.hasData || itemSnapshot.data!.docs.isEmpty) {
+                    if (!itemSnapshot.hasData ||
+                        itemSnapshot.data!.docs.isEmpty) {
                       return Center(
                         child: Text(
                           'No usage found for this user.',
-                          style: TextStyle(fontSize: 16),
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
                         ),
                       );
                     }
@@ -94,9 +102,14 @@ class UserDetailsPage extends StatelessWidget {
 
                         return Card(
                           margin: EdgeInsets.all(10),
+                          elevation: 5,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                           child: ListTile(
                             title: Text('Material: $materialType'),
-                            subtitle: Text('Cost: \$${cost.toStringAsFixed(2)}'),
+                            subtitle:
+                                Text('Cost: \$${cost.toStringAsFixed(2)}'),
                           ),
                         );
                       },

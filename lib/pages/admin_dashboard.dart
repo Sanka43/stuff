@@ -10,14 +10,18 @@ class AdminDashboard extends StatelessWidget {
       extendBodyBehindAppBar:
           true, // Ensures the body extends behind the AppBar
       appBar: AppBar(
-        title: Text(''),
+        title: const Text(
+          'ADMIN',
+          style: TextStyle(
+              color: Colors.white, fontFamily: 'Roboto', fontSize: 24.0),
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent, // Transparent AppBar
         elevation: 0, // Removes shadow under the AppBar
         leading: IconButton(
-          icon: Icon(
+          icon: const Icon(
             Icons.logout_rounded,
-            color: const Color.fromARGB(255, 255, 0, 0), // Logout icon color
+            color: Color.fromARGB(255, 255, 0, 0), // Logout icon color
           ),
           tooltip: 'Log Out',
           onPressed: () {
@@ -26,7 +30,7 @@ class AdminDashboard extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: Icon(
+            icon: const Icon(
               Icons.add_box,
               color: Color.fromARGB(255, 17, 255, 0),
             ),
@@ -44,7 +48,7 @@ class AdminDashboard extends StatelessWidget {
         children: [
           // Background Image
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               image: DecorationImage(
                 image: AssetImage(
                     'assets/background.png'), // Replace with your image path
@@ -108,7 +112,7 @@ class AdminDashboard extends StatelessWidget {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
-                          vertical: 5.0, horizontal: 100.0),
+                          vertical: 5.0, horizontal: 90.0),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(50.0),
                       ),
@@ -125,7 +129,7 @@ class AdminDashboard extends StatelessWidget {
                       );
                     },
                     child: const Text(
-                      'S T U F F',
+                      'U S A G E S',
                       style: TextStyle(
                           fontSize: 18.0, fontWeight: FontWeight.bold),
                     ),

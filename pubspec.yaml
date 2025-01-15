@@ -14,12 +14,12 @@ dependencies:
   firebase_auth: ^5.3.4  # Update to the latest version
   cloud_firestore: ^5.0.0 # Update to the latest version
   multi_select_flutter: ^4.0.0
+  flutter_launcher_icons: ^0.14.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  
-  flutter_lints: ^5.0.0
+  flutter_lints: ^2.0.0
 
 
 flutter:
@@ -27,5 +27,6 @@ flutter:
     - assets/background.png
     - assets/stuff_button.jpeg
     - assets/thc.png
+    - assets/icon/icon.png
   uses-material-design: true
 

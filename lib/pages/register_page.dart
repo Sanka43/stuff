@@ -17,17 +17,27 @@ class _RegisterPageState extends State<RegisterPage> {
     // Check if username or password is empty
     if (username.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Username and Password are required!')),
+        const SnackBar(content: Text('Username and Password are required!')),
       );
       return; // Exit if validation fails
     }
 
+    // Check if user already exists
+    final usersRef = FirebaseFirestore.instance.collection('users');
+    final userDoc = await usersRef.where('username', isEqualTo: username).get();
+    if (userDoc.docs.length > 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Username already taken!')),
+      );
+      return; // Exit if user already exists
+    }
+
     try {
-      await FirebaseFirestore.instance.collection('users').add({
+      await usersRef.add({
         'username': username,
         'password': password,
         'role': 'user',
-        'cost': '0',
+        'cost': '0.00',
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('User registered successfully!')),
@@ -45,7 +55,7 @@ class _RegisterPageState extends State<RegisterPage> {
     return Scaffold(
       // appBar: AppBar(title: Text('Register')),
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage(
                 'assets/background.png'), // Replace with your image path
@@ -74,56 +84,44 @@ class _RegisterPageState extends State<RegisterPage> {
                       controller: _usernameController,
                       decoration: InputDecoration(
                         labelText: 'Username',
-                        labelStyle: TextStyle(
-                            color: Colors.white), // Change label text color
+                        labelStyle: TextStyle(color: Colors.white),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0),
-                        border: OutlineInputBorder(
+                        border: const OutlineInputBorder(
                           borderSide: BorderSide(
-                              color: const Color.fromARGB(255, 255, 255, 255),
-                              width: 2.0), // Border color
+                              color: Color.fromARGB(255, 255, 255, 255),
+                              width: 2.0),
                         ),
-                        enabledBorder: OutlineInputBorder(
+                        enabledBorder: const OutlineInputBorder(
                           borderSide: BorderSide(
-                              color: const Color.fromARGB(255, 253, 253, 253),
-                              width: 2.0), // Border color when enabled
+                              color: Color.fromARGB(255, 255, 255, 255),
+                              width: 2.0),
                         ),
-                        focusedBorder: OutlineInputBorder(
+                        focusedBorder: const OutlineInputBorder(
                           borderSide: BorderSide(
-                              color: const Color.fromARGB(255, 255, 255, 255),
-                              width: 2.0), // Border color when focused
+                              color: Color.fromARGB(255, 255, 255, 255),
+                              width: 2.0),
                         ),
                       ),
-                      style: TextStyle(
-                          color: Colors.white), // Text color inside input
+                      style: const TextStyle(color: Colors.white),
                     ),
                     SizedBox(height: 10),
                     TextField(
                       controller: _passwordController,
+                      obscureText: true,
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        labelStyle: TextStyle(
-                            color: Colors.white), // Change label text color
+                        labelStyle: TextStyle(color: Colors.white),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0),
-                        border: OutlineInputBorder(
+                        border: const OutlineInputBorder(
                           borderSide: BorderSide(
-                              color: const Color.fromARGB(255, 255, 255, 255),
-                              width: 2.0), // Border color
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: BorderSide(
-                              color: const Color.fromARGB(255, 255, 255, 255),
-                              width: 2.0), // Border color when enabled
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: BorderSide(
-                              color: const Color.fromARGB(255, 255, 255, 255),
+                              color: Color.fromARGB(255, 255, 255, 255),
                               width: 2.0), // Border color when focused
                         ),
                       ),
-                      obscureText: true,
-                      style: TextStyle(
+                      // obscureText: true,
+                      style: const TextStyle(
                           color: Colors.white), // Text color inside input
                     ),
                     SizedBox(height: 20),
@@ -137,7 +135,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         Navigator.pushNamed(
                             context, '/'); // Navigate to the login page
                       },
-                      child: Text('Already have an account? Login here.'),
+                      child: const Text('Already have an account? Login here.'),
                     ),
                   ],
                 ),

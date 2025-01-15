@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:stuff/pages/admin_dashboard.dart';
-// import 'package:stuff/pages/user_dashboard.dart';
+import 'package:stuff/pages/user_dashboard.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -29,7 +29,8 @@ class _LoginPageState extends State<LoginPage> {
         Navigator.pushReplacement(
             context, MaterialPageRoute(builder: (context) => AdminDashboard()));
       } else {
-        // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => UserDashboard()));
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (context) => UserDashboard()));
       }
     }
   }
