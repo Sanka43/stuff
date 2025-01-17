@@ -96,7 +96,7 @@ class _LoginPageState extends State<LoginPage> {
                         SizedBox(height: 10),
                         TextField(
                           controller: _passwordController,
-                          obscureText: true,
+                          obscureText: true, 
                           style: TextStyle(
                               color: Colors.white), // Input text color
                           decoration: InputDecoration(

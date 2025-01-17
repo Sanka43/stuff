@@ -7,7 +7,7 @@ class AdminDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar:
+      extendBodyBehindAppBar:   
           true, // Ensures the body extends behind the AppBar
       appBar: AppBar(
         title: const Text(

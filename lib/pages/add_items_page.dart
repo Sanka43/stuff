@@ -1,7 +1,7 @@
 import 'dart:ui';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:stuff/pages/admin_dashboard.dart';
 
 class AddItemsPage extends StatefulWidget {
   @override
@@ -16,7 +16,7 @@ class _AddItemsPageState extends State<AddItemsPage> {
   List<String> _selectedUsers = [];
   bool _isLoadingMaterials = true;
   bool _isLoadingUsers = true;
-  bool _isSubmitted = false;
+  bool _isSubmitted = false; // Track submission status
 
   @override
   void initState() {
@@ -25,7 +25,6 @@ class _AddItemsPageState extends State<AddItemsPage> {
     _fetchUsers();
   }
 
-  // Fetch material types from Firestore
   Future<void> _fetchMaterialTypes() async {
     try {
       final snapshot =
@@ -33,51 +32,37 @@ class _AddItemsPageState extends State<AddItemsPage> {
       setState(() {
         _materialTypes =
             snapshot.docs.map((doc) => doc['name']?.toString() ?? '').toList();
-        _isLoadingMaterials = false;
       });
     } catch (e) {
       print('Error fetching material types: $e');
-      setState(() {
-        _isLoadingMaterials = false;
-      });
+    } finally {
+      setState(() => _isLoadingMaterials = false);
     }
   }
 
-  // Fetch users from Firestore without duplicates
   Future<void> _fetchUsers() async {
     try {
-      setState(() {
-        _isLoadingUsers = true;
-      });
-
       final snapshot =
           await FirebaseFirestore.instance.collection('users').get();
-
-      // Use a Set to ensure unique usernames
-      final uniqueUsers = snapshot.docs
-          .map((doc) => doc['username']?.toString() ?? 'Unknown')
-          .toSet();
-
       setState(() {
-        _userList = uniqueUsers.toList();
-        _isLoadingUsers = false;
+        _userList = snapshot.docs
+            .map((doc) => doc['username']?.toString() ?? ' ')
+            .toSet()
+            .toList();
       });
     } catch (e) {
       print('Error fetching users: $e');
-      setState(() {
-        _isLoadingUsers = false;
-      });
+    } finally {
+      setState(() => _isLoadingUsers = false);
     }
   }
 
-  // Add item to Firestore
   Future<void> _addItem() async {
     if (_selectedMaterialType == null ||
         _costController.text.isEmpty ||
         _selectedUsers.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill in all fields')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Please fill in all fields')));
       return;
     }
 
@@ -85,7 +70,6 @@ class _AddItemsPageState extends State<AddItemsPage> {
       double cost = double.parse(_costController.text);
       double dividedCost = cost / _selectedUsers.length;
 
-      // Save to 'usedMaterial' collection
       await FirebaseFirestore.instance.collection('usedMaterial').add({
         'materialType': _selectedMaterialType,
         'cost': cost,
@@ -93,7 +77,6 @@ class _AddItemsPageState extends State<AddItemsPage> {
         'dateTime': Timestamp.now(),
       });
 
-      // Update each user's record with the divided cost
       for (String user in _selectedUsers) {
         final userSnapshot = await FirebaseFirestore.instance
             .collection('users')
@@ -102,9 +85,9 @@ class _AddItemsPageState extends State<AddItemsPage> {
 
         if (userSnapshot.docs.isNotEmpty) {
           var userDoc = userSnapshot.docs.first;
-          double currentCost = userDoc['cost'] != null ? userDoc['cost'] : 0.0;
+          double currentCost =
+              double.tryParse(userDoc['cost']?.toString() ?? '0.0') ?? 0.0;
 
-          // Update the user's cost field
           await FirebaseFirestore.instance
               .collection('users')
               .doc(userDoc.id)
@@ -114,21 +97,153 @@ class _AddItemsPageState extends State<AddItemsPage> {
         }
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Item added successfully')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Item added successfully')));
+      _resetForm();
 
-      // Clear inputs
       setState(() {
-        _selectedMaterialType = null;
-        _costController.clear();
-        _selectedUsers.clear();
+        _isSubmitted = true; // Set the submission status to true
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error adding item: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error adding item: $e')));
     }
+  }
+
+  void _resetForm() {
+    setState(() {
+      _selectedMaterialType = null;
+      _costController.clear();
+      _selectedUsers.clear();
+    });
+  }
+
+  // Function to add a new user
+  void _addNewUser(String username, String password) async {
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please enter both username and password')));
+      return;
+    }
+
+    try {
+      // Add the new user to Firestore
+      await FirebaseFirestore.instance.collection('users').add({
+        'username': username,
+        'password': password, // Ideally, hash the password before storing it
+        'cost': 0.0, // Assuming a new user starts with a cost of 0.0
+        'role': 'user', // Assuming a new user is a regular user
+      });
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('New user added successfully')));
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error adding user: $e')));
+    }
+  }
+
+  // Function to add a new material type
+  void _addNewMaterialType(String materialType) async {
+    if (materialType.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please enter a material type')));
+      return;
+    }
+
+    try {
+      // Add the new material type to Firestore
+      await FirebaseFirestore.instance.collection('materialTypes').add({
+        'name': materialType,
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('New material type added successfully')));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error adding material type: $e')));
+    }
+  }
+
+  // Show Add User Dialog
+  void _showAddUserDialog() {
+    final usernameController = TextEditingController();
+    final passwordController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Add New User"),
+          content: Column(
+            children: [
+              TextField(
+                controller: usernameController,
+                decoration: InputDecoration(labelText: "Username"),
+              ),
+              TextField(
+                controller: passwordController,
+                decoration: InputDecoration(labelText: "Password"),
+                obscureText: true, // Hide password text
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                String username = usernameController.text.trim();
+                String password = passwordController.text.trim();
+                _addNewUser(username, password);
+                Navigator.pop(context); // Close the dialog
+              },
+              child: Text("Add"),
+            ),
+            // Cancel Button
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog without any action
+              },
+              child: Text("Cancel"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Show Add Material Dialog
+  void _showAddMaterialDialog() {
+    final materialController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Add New Material Type"),
+          content: TextField(
+            controller: materialController,
+            decoration: InputDecoration(labelText: "Material Type"),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                String materialType = materialController.text.trim();
+                _addNewMaterialType(materialType);
+                Navigator.pop(context); // Close the dialog
+              },
+              child: Text("Add Material"),
+            ),
+            // Cancel Button
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog without any action
+              },
+              child: Text("Cancel"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -136,112 +251,119 @@ class _AddItemsPageState extends State<AddItemsPage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(
-          'Add Items',
-          style: TextStyle(color: Colors.white),
+        title: const Text(
+          '',
+          style: TextStyle(
+              color: Colors.white, fontFamily: 'Roboto', fontSize: 24.0),
         ),
+        centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/background.png'),
-            fit: BoxFit.cover,
+        leading: null, // This line removes the back arrow button
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.home,
+              color: Color.fromARGB(255, 245, 248, 247),
+            ),
+            tooltip: 'Home',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AdminDashboard()),
+              );
+            },
           ),
-        ),
-        width: double.infinity,
-        height: double.infinity,
-        padding: const EdgeInsets.all(20.0),
-        child: SingleChildScrollView(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+        ],
+      ),
+      body: Stack(
+        children: [
+          // Background Image
+          Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/background.png'),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+          // Scrollable content
+          SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.only(top: 100.0, right: 20, left: 20),
+              padding: const EdgeInsets.all(50.0),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Select Material Type',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          _buildDropdownSection();
-                        },
-                        child: Text('+'),
-                      ),
-                    ],
-                  ),
+                  SizedBox(height: 20),
                   _buildDropdownSection(),
-                  SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Select Users',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          // Add new user logic
-                        },
-                        child: Text('+'),
-                      ),
-                    ],
-                  ),
+                  SizedBox(height: 20),
                   _buildUserSelectionSection(),
                   SizedBox(height: 20),
                   _buildCostInput(),
                   SizedBox(height: 20),
                   _buildSubmitButton(),
+                  SizedBox(height: 40),
+                  _buildActionButtons(),
                 ],
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildDropdownSection() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        const Text(
+          'Select Material Type',
+          style: TextStyle(
+            fontSize: 20,
+            letterSpacing: 1,
+            fontWeight: FontWeight.bold,
+            color: Color.fromARGB(255, 255, 255, 255),
+          ),
+        ),
+        SizedBox(height: 10),
         _isLoadingMaterials
-            ? Center(child: CircularProgressIndicator())
+            ? const CircularProgressIndicator()
             : DropdownButton<String>(
                 value: _selectedMaterialType,
-                hint: Text(
+                hint: const Text(
                   'Choose Material Type',
-                  style: TextStyle(fontSize: 16, color: Color(0xFFc2c2c2)),
+                  style: TextStyle(
+                    color: Color.fromARGB(255, 255, 255, 255),
+                  ),
                 ),
                 items: _materialTypes.map((type) {
-                  return DropdownMenuItem(
+                  return DropdownMenuItem<String>(
                     value: type,
-                    child: Text(
-                      type,
-                      style: TextStyle(fontSize: 16, color: Colors.black),
+                    child: Container(
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(255, 0, 0, 0)
+                            .withOpacity(0.9), // Transparent black background
+                        borderRadius: BorderRadius.circular(0),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          type,
+                          style: const TextStyle(
+                            color: Colors.white, // White text color
+                          ),
+                        ),
+                      ),
                     ),
                   );
                 }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedMaterialType = value;
-                  });
-                },
+                onChanged: (value) =>
+                    setState(() => _selectedMaterialType = value),
                 isExpanded: true,
+                dropdownColor: Colors
+                    .transparent, // To make the dropdown itself transparent
               ),
       ],
     );
@@ -249,38 +371,35 @@ class _AddItemsPageState extends State<AddItemsPage> {
 
   Widget _buildUserSelectionSection() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(height: 16),
+        const Text('Select Users',
+            style: TextStyle(
+                fontSize: 20,
+                letterSpacing: 2,
+                color: Color(0xffffffff),
+                fontWeight: FontWeight.bold)),
+        SizedBox(height: 10),
         _isLoadingUsers
-            ? Center(child: CircularProgressIndicator())
+            ? CircularProgressIndicator()
             : Wrap(
                 spacing: 8.0,
-                runSpacing: 8.0,
+                alignment: WrapAlignment.center,
                 children: _userList.map((user) {
                   bool isSelected = _selectedUsers.contains(user);
                   return ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: isSelected
                           ? const Color.fromARGB(255, 0, 0, 0)
-                          : Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
+                          : Colors.grey[200],
+                      foregroundColor: isSelected ? Colors.white : Colors.black,
                     ),
-                    onPressed: () {
-                      setState(() {
-                        if (isSelected) {
-                          _selectedUsers.remove(user);
-                        } else {
-                          _selectedUsers.add(user);
-                        }
-                      });
-                    },
-                    child: Text(
-                      user,
-                      style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.black),
-                    ),
+                    onPressed: () => setState(() {
+                      isSelected
+                          ? _selectedUsers.remove(user)
+                          : _selectedUsers.add(user);
+                    }),
+                    child: Text(user),
                   );
                 }).toList(),
               ),
@@ -289,50 +408,101 @@ class _AddItemsPageState extends State<AddItemsPage> {
   }
 
   Widget _buildCostInput() {
-    return TextField(
-      controller: _costController,
-      keyboardType: TextInputType.number,
-      decoration: InputDecoration(
-        labelText: 'Cost',
-        labelStyle: TextStyle(color: Colors.white),
-        border: OutlineInputBorder(),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
-      ),
-      style: TextStyle(color: Colors.white),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        const Text('Enter Cost',
+            style: TextStyle(
+              fontSize: 20,
+              letterSpacing: 2,
+              fontWeight: FontWeight.bold,
+              color: Color(0xffffffff),
+            )),
+        const SizedBox(height: 10),
+        TextField(
+          controller: _costController,
+          keyboardType: TextInputType.number,
+          style: const TextStyle(
+            color: Colors.white, // Set the text color to white
+          ),
+          decoration: const InputDecoration(
+            labelText: 'Cost',
+            labelStyle: TextStyle(
+              color: Color(0xaaaaaaaa),
+              letterSpacing: 1,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+            border: OutlineInputBorder(),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildSubmitButton() {
     return Center(
       child: ElevatedButton(
-        onPressed: () {
-          setState(() {
-            _isSubmitted = true;
-          });
-          _addItem();
-        },
-        style: ElevatedButton.styleFrom(
-          minimumSize: Size(200, 40),
-          backgroundColor: _isSubmitted ? Colors.white : Colors.transparent,
-          padding: EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(50),
-            side: BorderSide(
-              color: _isSubmitted ? Colors.green : Colors.white,
-              width: _isSubmitted ? 0 : 2,
-            ),
+        onPressed: _isSubmitted ? null : _addItem,
+        style: ButtonStyle(
+          backgroundColor: MaterialStateProperty.all(
+            _isSubmitted
+                ? const Color.fromARGB(255, 0, 0, 0)
+                : const Color.fromARGB(255, 255, 255, 255),
           ),
+          fixedSize: MaterialStateProperty.all(Size(200, 50)),
         ),
         child: Text(
           _isSubmitted ? 'Submitted' : 'Submit',
           style: TextStyle(
+            color: _isSubmitted
+                ? const Color.fromARGB(255, 255, 255, 255)
+                : const Color.fromARGB(255, 0, 0, 0),
             fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: _isSubmitted ? Colors.black : Colors.white,
+            letterSpacing: 1,
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 100,
+          height: 50,
+          child: ElevatedButton(
+            onPressed: _showAddUserDialog,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+            ),
+            child: const Text(
+              'User',
+              style: TextStyle(color: Color(0xFF000000)),
+            ),
+          ),
+        ),
+        SizedBox(width: 20),
+        Container(
+          width: 100,
+          height: 50,
+          child: ElevatedButton(
+            onPressed: _showAddMaterialDialog,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+            ),
+            child: const Text(
+              'Material',
+              style: TextStyle(
+                color: Color.fromARGB(255, 0, 0, 0),
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
