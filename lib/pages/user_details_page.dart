@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:stuff/pages/admin_dashboard.dart';
 
 class UserDetailsPage extends StatelessWidget {
   final String userId; // User ID passed to this page
@@ -13,9 +14,32 @@ class UserDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text('User Details'),
-        backgroundColor: Colors.deepPurpleAccent,
+        title: const Text(
+          '',
+          style: TextStyle(
+              color: Colors.white, fontFamily: 'Roboto', fontSize: 24.0),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: null, // This line removes the back arrow button
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.home,
+              color: Color.fromARGB(255, 255, 255, 255),
+            ),
+            tooltip: 'Home',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AdminDashboard()),
+              );
+            },
+          ),
+        ],
       ),
       body: FutureBuilder<DocumentSnapshot>(
         future: usersCollection.doc(userId).get(),
@@ -41,7 +65,7 @@ class UserDetailsPage extends StatelessWidget {
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.all(15.0),
+                padding: const EdgeInsets.only(top: 100.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -58,7 +82,7 @@ class UserDetailsPage extends StatelessWidget {
                       style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                     SizedBox(height: 20),
-                    Text(
+                    const Text(
                       'Things Usage:',
                       style: TextStyle(
                           fontSize: 16,
@@ -81,7 +105,7 @@ class UserDetailsPage extends StatelessWidget {
 
                     if (!itemSnapshot.hasData ||
                         itemSnapshot.data!.docs.isEmpty) {
-                      return Center(
+                      return const Center(
                         child: Text(
                           'No usage found for this user.',
                           style: TextStyle(fontSize: 16, color: Colors.grey),
